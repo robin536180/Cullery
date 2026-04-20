@@ -1,0 +1,81 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "keep": "Keep",
+    "processing": "Processing..."
+  },
+  "nav": {
+    "spaceAnalysis": "Space Analysis",
+    "smartCleanup": "Smart Cleanup",
+    "proSelection": "Pro Selection",
+    "voiceCommand": "Voice Command",
+    "settings": "Settings",
+    "dashboard": "Dashboard"
+  },
+  "dashboard": {
+    "storageOverview": "Storage Overview",
+    "totalPhotos": "Total Photos",
+    "totalVideos": "Total Videos",
+    "screenshots": "Screenshots",
+    "cleanupSuggestions": "Cleanup Suggestions",
+    "duplicates": "Duplicate Photos",
+    "duplicatesDesc": "Identical or highly similar shots",
+    "screenshotsDesc": "Screenshots and recordings",
+    "lowQuality": "Low Quality",
+    "lowQualityDesc": "Blurry, dark, or bad exposure",
+    "review": "Review",
+    "spaceSaved": "Space Saved",
+    "scanComplete": "Scan Complete"
+  },
+  "cleanup": {
+    "title": "Smart Cleanup",
+    "scanning": "AI Scanning in progress...",
+    "similarGroups": "Similar Photo Groups",
+    "bestShot": "Best Shot",
+    "blur": "Blur",
+    "exposure": "Exposure",
+    "composition": "Composition",
+    "selectToKeep": "Select to Keep",
+    "moveToTrash": "Move to Trash"
+  },
+  "selection": {
+    "title": "Professional Selection",
+    "aiRating": "AI Professional Rating",
+    "reasoning": "AI Reasoning",
+    "sharpness": "Sharpness",
+    "exposure": "Exposure",
+    "color": "Color",
+    "moment": "Moment",
+    "keepBest": "Keep Best Shot"
+  },
+  "voice": {
+    "title": "Voice Command",
+    "listening": "Listening...",
+    "tapToSpeak": "Tap microphone to speak",
+    "examples": "Try saying:",
+    "example1": "\"Delete all blurry photos\"",
+    "example2": "\"Keep the best photo from last week\"",
+    "processingCommand": "Processing command..."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "modelManagement": "AI Model Management",
+    "modelStatus": "Model Status",
+    "modelNotDownloaded": "Not Downloaded",
+    "modelDownloaded": "Ready (Offline)",
+    "download": "Download",
+    "downloading": "Downloading...",
+    "modelSize": "Size: ~3.2GB",
+    "permissions": "Permissions",
+    "photoLibrary": "Photo Library",
+    "microphone": "Microphone",
+    "check": "Check",
+    "granted": "Granted",
+    "denied": "Denied"
+  }
+}

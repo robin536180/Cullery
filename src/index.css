@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 26 26 26;
+    --foreground: 255 255 255;
+    --primary: 0 212 170;
+    --primary-foreground: 26 26 26;
+  }
+}
+
+body {
+  @apply bg-background text-foreground font-sans antialiased;
+}

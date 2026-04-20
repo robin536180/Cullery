@@ -1,0 +1,81 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "keep": "保留",
+    "processing": "处理中..."
+  },
+  "nav": {
+    "spaceAnalysis": "空间分析",
+    "smartCleanup": "智能清理",
+    "proSelection": "专业选片",
+    "voiceCommand": "语音控制",
+    "settings": "设置",
+    "dashboard": "仪表盘"
+  },
+  "dashboard": {
+    "storageOverview": "存储概览",
+    "totalPhotos": "照片总数",
+    "totalVideos": "视频总数",
+    "screenshots": "截图",
+    "cleanupSuggestions": "清理建议",
+    "duplicates": "重复照片",
+    "duplicatesDesc": "完全相同或高度相似的照片",
+    "screenshotsDesc": "屏幕截图和录屏",
+    "lowQuality": "低质量照片",
+    "lowQualityDesc": "模糊、过暗或曝光不佳",
+    "review": "去处理",
+    "spaceSaved": "已节省空间",
+    "scanComplete": "扫描完成"
+  },
+  "cleanup": {
+    "title": "智能清理",
+    "scanning": "AI 正在扫描...",
+    "similarGroups": "相似照片组",
+    "bestShot": "最佳推荐",
+    "blur": "模糊",
+    "exposure": "曝光",
+    "composition": "构图",
+    "selectToKeep": "选择保留",
+    "moveToTrash": "移入回收站"
+  },
+  "selection": {
+    "title": "专业选片",
+    "aiRating": "AI 专业评分",
+    "reasoning": "AI 推荐理由",
+    "sharpness": "清晰度",
+    "exposure": "曝光",
+    "color": "色彩",
+    "moment": "瞬间",
+    "keepBest": "保留最佳"
+  },
+  "voice": {
+    "title": "语音控制",
+    "listening": "正在聆听...",
+    "tapToSpeak": "点击麦克风开始说话",
+    "examples": "试着说：",
+    "example1": "“删除所有模糊的照片”",
+    "example2": "“保留上周最好的一张照片”",
+    "processingCommand": "正在处理指令..."
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "modelManagement": "AI 模型管理",
+    "modelStatus": "模型状态",
+    "modelNotDownloaded": "未下载",
+    "modelDownloaded": "就绪 (离线)",
+    "download": "下载",
+    "downloading": "下载中...",
+    "modelSize": "大小: ~3.2GB",
+    "permissions": "权限管理",
+    "photoLibrary": "相册访问",
+    "microphone": "麦克风",
+    "check": "检查",
+    "granted": "已授权",
+    "denied": "未授权"
+  }
+}
