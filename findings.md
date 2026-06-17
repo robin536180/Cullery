@@ -10,10 +10,14 @@
 
 ## 已确认的问题
 
-- 真实手机相册读取尚未实现，目前 `NativeService.getPhotos()` 仍返回空数组，业务数据仍主要依赖前端 mock 数据。
+- 真实相册读取已接入 Android MediaStore 全量扫描：`NativeService.getPhotos()` 在 Android 端会通过自定义原生插件读取系统图片元数据，并基于相册路径/桶名做截图识别；Web 端仍维持文件选择的演示逻辑。
 - 大模型自动下载当前是进度模拟，并未真正使用文件下载、断点续传、存储校验、模型解压和落盘逻辑。
 - 语音能力当前仅完成权限申请与交互演示，未形成真实的 ASR 识别结果到业务指令执行的完整闭环。
 - Android Debug APK 在当前环境中未能完成构建，原因是 Gradle 依赖下载被网络限制拦截，报错为 `Connection refused`。
+- 发现 `android/gradle.properties` 曾配置强制 HTTP/HTTPS 代理到 `mirrors.cloud.tencent.com:4443`，在当前网络条件下会导致 Gradle 解析依赖时连接超时；已移除该强制代理设置，改由环境/IDE 自行配置代理。
+- 发现 Android 工程缺失 `android/gradle/wrapper/`（含 `gradle-wrapper.jar`/`gradle-wrapper.properties`），导致 `./gradlew` 无法启动；已补齐后可正常进入 Gradle 分发包下载流程。当前沙箱环境仍会在下载阶段触发 Socket 限制，并因 `C:\\ProgramData\\Oracle\\Java\\.oracle_jre_usage\\` 写入被拦截而中断。
+- 当前“回收站恢复”实现为应用内数据恢复（不触发系统相册删除/恢复），满足 MVP 闭环但不等价于系统层真实删除。
+- 当前沙箱环境无法执行 Android 构建：Gradle Wrapper 下载 `https://services.gradle.org/distributions/...` 时触发 `Socket operation on nonsocket: create`，并伴随对 `C:\\ProgramData\\Oracle\\Java\\.oracle_jre_usage\\` 的写入被拦截。
 - Web 产物体积偏大，`vite build` 结果中主包约 `847.63 kB`，后续需要做拆包与懒加载优化。
 
 ## 风险判断

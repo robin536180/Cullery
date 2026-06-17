@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Card } from '../components/ui/Card';
 import { Mic, MicOff, Command } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';

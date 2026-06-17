@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Shield, Cloud, Smartphone, Moon, Globe, Download, Check, Mic, Image as ImageIcon } from 'lucide-react';
+import { Shield, Smartphone, Moon, Globe, Download, Check, Mic, Image as ImageIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NativeService } from '../services/native';
+import type { NativePermissionStatus } from '../services/native';
 
 export const Settings = () => {
   const { t, i18n } = useTranslation();
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
-  const [permissions, setPermissions] = useState<any>({ photos: 'prompt', microphone: 'prompt' });
+  const [permissions, setPermissions] = useState<NativePermissionStatus>({
+    camera: 'prompt',
+    photos: 'prompt',
+    microphone: 'prompt',
+  });
 
   useEffect(() => {
     checkStatus();

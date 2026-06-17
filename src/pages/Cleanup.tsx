@@ -1,22 +1,49 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { Card, CardContent } from '../components/ui/Card';
-import { Trash2, Check, X, AlertTriangle, Maximize2 } from 'lucide-react';
+import { Trash2, Check, Maximize2, Upload } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 export const Cleanup = () => {
-  const { cleanupSuggestions, deletePhoto, deletePhotos } = useStore();
-  const [activeTab, setActiveTab] = useState<'duplicates' | 'screenshots' | 'lowQuality'>('duplicates');
+  const { cleanupSuggestions, deletePhotos, photos, isLoading, loadPhotosFromLibrary, recycleBin, restorePhoto } =
+    useStore();
+  type CleanupTab = 'duplicates' | 'screenshots' | 'lowQuality' | 'recycleBin';
+  const [activeTab, setActiveTab] = useState<CleanupTab>('duplicates');
+  const [selectedScreenshotIds, setSelectedScreenshotIds] = useState<string[]>([]);
   const { t } = useTranslation();
 
-  if (!cleanupSuggestions) return <div className="p-6">{t('common.loading')}</div>;
+  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
+  if (!cleanupSuggestions || photos.length === 0) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="py-12 flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <Upload className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-lg font-semibold">{t('dashboard.noPhotosTitle')}</div>
+              <p className="text-sm text-muted-foreground mt-1">{t('dashboard.noPhotosDesc')}</p>
+            </div>
+            <button
+              onClick={() => void loadPhotosFromLibrary()}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              {t('dashboard.importPhotos')}
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const tabs = [
+  const tabs: Array<{ id: CleanupTab; label: string; count: number }> = [
     { id: 'duplicates', label: t('dashboard.duplicates'), count: cleanupSuggestions.duplicates.length },
     { id: 'screenshots', label: t('dashboard.screenshots'), count: cleanupSuggestions.screenshots.length },
     { id: 'lowQuality', label: t('dashboard.lowQuality'), count: cleanupSuggestions.lowQuality.length },
+    { id: 'recycleBin', label: t('cleanup.recycleBin'), count: recycleBin.length },
   ];
 
   return (
@@ -31,7 +58,10 @@ export const Cleanup = () => {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSelectedScreenshotIds([]);
+              }}
               className={cn(
                 "px-4 py-2 rounded-md text-sm font-medium transition-all relative",
                 activeTab === tab.id ? "text-primary" : "text-muted-foreground hover:text-foreground"
@@ -128,28 +158,76 @@ export const Cleanup = () => {
 
 
           {activeTab === 'screenshots' && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {cleanupSuggestions.screenshots.map((photo) => (
-                <div key={photo.id} className="relative group aspect-[9/16] bg-black/20 rounded-lg overflow-hidden">
-                   <img
-                      src={photo.thumbnailUrl}
-                      alt={photo.fileName}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                    />
-                    <div className="absolute top-2 right-2">
-                       <input type="checkbox" className="w-5 h-5 rounded border-white/20 bg-black/40 checked:bg-primary" />
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent text-xs text-white">
-                      {photo.fileName}
-                    </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-card border border-white/5 rounded-lg px-4 py-3">
+                <div className="text-sm text-muted-foreground">
+                  {t('cleanup.selectedCount', { count: selectedScreenshotIds.length })}
                 </div>
-              ))}
-               {cleanupSuggestions.screenshots.length === 0 && (
-                <div className="col-span-full text-center py-20 text-muted-foreground">
-                  <Check className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  No screenshots found.
-                </div>
-              )}
+                <button
+                  disabled={selectedScreenshotIds.length === 0}
+                  onClick={() => {
+                    deletePhotos(selectedScreenshotIds);
+                    setSelectedScreenshotIds([]);
+                  }}
+                  className={cn(
+                    "text-sm px-3 py-1.5 rounded-md transition-colors flex items-center gap-2",
+                    selectedScreenshotIds.length === 0
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                  )}
+                >
+                  <Trash2 className="w-4 h-4" /> {t('cleanup.moveToTrash')}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {cleanupSuggestions.screenshots.map((photo) => {
+                  const checked = selectedScreenshotIds.includes(photo.id);
+                  return (
+                    <div
+                      key={photo.id}
+                      className={cn(
+                        "relative group aspect-[9/16] bg-black/20 rounded-lg overflow-hidden border-2 transition-all",
+                        checked ? "border-primary ring-2 ring-primary/20" : "border-transparent"
+                      )}
+                      onClick={() => {
+                        setSelectedScreenshotIds((current) =>
+                          current.includes(photo.id) ? current.filter((id) => id !== photo.id) : [...current, photo.id]
+                        );
+                      }}
+                    >
+                      <img
+                        src={photo.thumbnailUrl}
+                        alt={photo.fileName}
+                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                      />
+                      <div className="absolute top-2 right-2" onClick={(event) => event.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setSelectedScreenshotIds((current) =>
+                              current.includes(photo.id)
+                                ? current.filter((id) => id !== photo.id)
+                                : [...current, photo.id]
+                            );
+                          }}
+                          className="w-5 h-5 rounded border-white/20 bg-black/40 checked:bg-primary"
+                        />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent text-xs text-white">
+                        {photo.fileName}
+                      </div>
+                    </div>
+                  );
+                })}
+                {cleanupSuggestions.screenshots.length === 0 && (
+                  <div className="col-span-full text-center py-20 text-muted-foreground">
+                    <Check className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                    {t('cleanup.noScreenshots')}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
@@ -177,7 +255,38 @@ export const Cleanup = () => {
                {cleanupSuggestions.lowQuality.length === 0 && (
                 <div className="col-span-full text-center py-20 text-muted-foreground">
                    <Check className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  No low quality photos found.
+                  {t('cleanup.noLowQuality')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'recycleBin' && (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {recycleBin.map((photo) => (
+                <div key={photo.id} className="relative group aspect-[4/3] bg-black/20 rounded-lg overflow-hidden">
+                  <img
+                    src={photo.thumbnailUrl}
+                    alt={photo.fileName}
+                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      onClick={() => restorePhoto(photo.id)}
+                      className="bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      {t('cleanup.restore')}
+                    </button>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent text-xs text-white">
+                    {photo.fileName}
+                  </div>
+                </div>
+              ))}
+              {recycleBin.length === 0 && (
+                <div className="col-span-full text-center py-20 text-muted-foreground">
+                  <Check className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  {t('cleanup.recycleBinEmpty')}
                 </div>
               )}
             </div>

@@ -9,11 +9,11 @@ import { Settings } from './pages/Settings';
 import { useStore } from './store/useStore';
 
 function App() {
-  const initializeMockData = useStore((state) => state.initializeMockData);
+  const initializeAppData = useStore((state) => state.initializeAppData);
 
   useEffect(() => {
-    initializeMockData();
-  }, [initializeMockData]);
+    initializeAppData();
+  }, [initializeAppData]);
 
   return (
     <BrowserRouter>

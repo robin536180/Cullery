@@ -33,6 +33,11 @@
 - Web 构建：成功。
 - Capacitor 同步：成功。
 - Android Debug 构建：失败（当前环境网络受限，Gradle 无法拉取发行包，`Connection refused`）。
+ - 代码静态检查：`npm run check` 通过；`npm run lint` 已修复并通过（忽略 `.history`，并修复 `any`/未使用导入/类型断言）。
+ - Android Gradle 配置：移除了 `android/gradle.properties` 中强制代理（`mirrors.cloud.tencent.com:4443`），避免在非该网络环境下导致依赖解析异常。
+ - Android Wrapper：已补齐 `android/gradle/wrapper/gradle-wrapper.jar` 与 `gradle-wrapper.properties`，`./gradlew --version` 已能启动并进入 Gradle 分发包下载阶段；当前沙箱环境仍会因网络 Socket 限制与 Java usage 目录写入限制而失败。
+ - 截图识别 + 回收站恢复：已打通“全量扫描 → 截图识别 → 勾选移入回收站 → 回收站恢复”的应用内真实闭环；并完成 `npm run check` / `npm run lint` 验证通过。
+ - 本次验证：`npm run build` 成功；`npx cap sync android` 成功；`./gradlew :app:assembleDebug` 在沙箱环境下载 Gradle 分发包阶段因 Socket/文件写入限制失败（`Socket operation on nonsocket: create`）。
 
 ## 当前状态
 
@@ -48,7 +53,7 @@
 | M3：中英文切换 | 已完成 | 100% | 已支持中英文切换 |
 | M4：PWA 安装体验 | 已完成 | 90% | 可添加到主屏幕，仍偏 Web 体验 |
 | M5：Android 工程初始化 | 已完成 | 90% | 已 sync 成功，但本环境未产出 APK |
-| M6：真实原生相册能力 | 进行中 | 20% | 当前仍为 mock/占位实现 |
+| M6：真实原生相册能力 | 进行中 | 60% | Android 端已接入 MediaStore 全量扫描与截图识别，仍需在本地环境验证 APK 构建与真实机型兼容 |
 | M7：真实语音执行能力 | 进行中 | 20% | 仅权限与演示交互已完成 |
 | M8：真实模型下载能力 | 未开始 | 10% | 仅模拟下载进度 |
 

@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { PhotoMetadata, AICleanupSuggestion, SimilarityCluster, ProfessionalSelection } from '../types';
+import { NativeService } from '../services/native';
 
 interface AppState {
   photos: PhotoMetadata[];
   cleanupSuggestions: AICleanupSuggestion | null;
   selectedCluster: SimilarityCluster | null;
   professionalSelections: Record<string, ProfessionalSelection>; // photoId -> selection
+  recycleBin: PhotoMetadata[];
   storageStats: {
     totalPhotos: number;
     usedSpace: number; // in GB
@@ -16,7 +18,8 @@ interface AppState {
   isLoading: boolean;
   
   // Actions
-  initializeMockData: () => void;
+  initializeAppData: () => void;
+  loadPhotosFromLibrary: () => Promise<void>;
   deletePhoto: (id: string) => void;
   deletePhotos: (ids: string[]) => void;
   restorePhoto: (id: string) => void;
@@ -48,11 +51,95 @@ const generateMockPhotos = (count: number): PhotoMetadata[] => {
   }));
 };
 
-export const useStore = create<AppState>((set, get) => ({
+const emptyCleanupSuggestions = (): AICleanupSuggestion => ({
+  duplicates: [],
+  screenshots: [],
+  lowQuality: [],
+  totalSpaceReclaimable: 0,
+  confidence: 1,
+});
+
+const buildStorageStats = (photos: PhotoMetadata[]) => {
+  const totalSize = photos.reduce((acc, photo) => acc + photo.fileSize, 0);
+  const screenshots = photos.filter((photo) => photo.type === 'screenshot');
+  const screenshotsSize = screenshots.reduce((acc, photo) => acc + photo.fileSize, 0);
+
+  return {
+    totalPhotos: photos.length,
+    usedSpace: totalSize / (1024 * 1024 * 1024),
+    screenshotsSize: screenshotsSize / (1024 * 1024 * 1024),
+    duplicatesSize: 0,
+    videosSize: 0,
+  };
+};
+
+const buildSimilarityClusters = (photos: PhotoMetadata[]): SimilarityCluster[] => {
+  const candidates = photos.filter((photo) => photo.type === 'photo');
+  const clusters: SimilarityCluster[] = [];
+
+  for (let index = 0; index + 2 < candidates.length && clusters.length < 5; index += 3) {
+    const clusterPhotos = candidates.slice(index, index + 3);
+    if (clusterPhotos.length < 2) continue;
+
+    const sortedPhotos = [...clusterPhotos].sort(
+      (left, right) => (right.aiAnalysis?.qualityScore || 0) - (left.aiAnalysis?.qualityScore || 0)
+    );
+
+    clusters.push({
+      id: `cluster-${index}`,
+      photos: clusterPhotos,
+      clusterType: 'similar',
+      bestPhotoId: sortedPhotos[0].id,
+      recommendedDeletions: sortedPhotos.slice(1).map((photo) => photo.id),
+    });
+  }
+
+  return clusters;
+};
+
+const buildCleanupSuggestions = (photos: PhotoMetadata[]): AICleanupSuggestion => {
+  if (photos.length === 0) {
+    return emptyCleanupSuggestions();
+  }
+
+  const duplicates = buildSimilarityClusters(photos);
+  const screenshots = photos.filter((photo) => photo.type === 'screenshot');
+  const lowQuality = photos.filter((photo) => (photo.aiAnalysis?.qualityScore || 100) < 45);
+  const duplicateBytes = duplicates
+    .flatMap((cluster) => cluster.photos.filter((photo) => cluster.recommendedDeletions.includes(photo.id)))
+    .reduce((acc, photo) => acc + photo.fileSize, 0);
+  const screenshotBytes = screenshots.reduce((acc, photo) => acc + photo.fileSize, 0);
+
+  return {
+    duplicates,
+    screenshots,
+    lowQuality,
+    totalSpaceReclaimable: (duplicateBytes + screenshotBytes) / (1024 * 1024 * 1024),
+    confidence: 0.9,
+  };
+};
+
+const deriveState = (photos: PhotoMetadata[]) => {
+  const cleanupSuggestions = buildCleanupSuggestions(photos);
+  const duplicateBytes = cleanupSuggestions.duplicates
+    .flatMap((cluster) => cluster.photos.filter((photo) => cluster.recommendedDeletions.includes(photo.id)))
+    .reduce((acc, photo) => acc + photo.fileSize, 0);
+
+  return {
+    cleanupSuggestions,
+    storageStats: {
+      ...buildStorageStats(photos),
+      duplicatesSize: duplicateBytes / (1024 * 1024 * 1024),
+    },
+  };
+};
+
+export const useStore = create<AppState>((set) => ({
   photos: [],
   cleanupSuggestions: null,
   selectedCluster: null,
   professionalSelections: {},
+  recycleBin: [],
   storageStats: {
     totalPhotos: 0,
     usedSpace: 0,
@@ -62,62 +149,78 @@ export const useStore = create<AppState>((set, get) => ({
   },
   isLoading: false,
 
-  initializeMockData: () => {
+  initializeAppData: () => {
     set({ isLoading: true });
-    
-    // Simulate async loading
+
     setTimeout(() => {
-      const photos = generateMockPhotos(50);
-      
-      // Create mock clusters
-      const duplicates: SimilarityCluster[] = [];
-      for (let i = 0; i < 5; i++) {
-        const clusterPhotos = photos.slice(i * 3, i * 3 + 3);
-        duplicates.push({
-          id: `cluster-${i}`,
-          photos: clusterPhotos,
-          clusterType: 'similar',
-          bestPhotoId: clusterPhotos[0].id,
-          recommendedDeletions: clusterPhotos.slice(1).map(p => p.id)
-        });
-      }
-      
-      const screenshots = photos.filter(p => p.type === 'screenshot');
-      const lowQuality = photos.filter(p => (p.aiAnalysis?.qualityScore || 100) < 40);
-      
-      const totalSize = photos.reduce((acc, p) => acc + p.fileSize, 0);
-      const screenshotsSize = screenshots.reduce((acc, p) => acc + p.fileSize, 0);
-      
+      const photos = NativeService.isNative ? [] : generateMockPhotos(50);
+
       set({
         photos,
-        storageStats: {
-          totalPhotos: photos.length,
-          usedSpace: totalSize / (1024 * 1024 * 1024),
-          screenshotsSize: screenshotsSize / (1024 * 1024 * 1024),
-          duplicatesSize: 0.5, // Mock
-          videosSize: 1.2, // Mock
-        },
-        cleanupSuggestions: {
-          duplicates,
-          screenshots,
-          lowQuality,
-          totalSpaceReclaimable: (screenshotsSize + 0.5 * 1024 * 1024 * 1024) / (1024 * 1024 * 1024),
-          confidence: 0.95
-        },
-        isLoading: false
+        ...deriveState(photos),
+        isLoading: false,
       });
     }, 1000);
   },
 
-  deletePhoto: (id) => set((state) => ({
-    photos: state.photos.filter(p => p.id !== id)
-  })),
+  loadPhotosFromLibrary: async () => {
+    set({ isLoading: true });
 
-  deletePhotos: (ids) => set((state) => ({
-    photos: state.photos.filter(p => !ids.includes(p.id))
-  })),
+    try {
+      const photos = await NativeService.getPhotos();
 
-  restorePhoto: (id) => console.log('Restore photo', id), // Mock implementation
+      if (photos.length === 0) {
+        set({ isLoading: false });
+        return;
+      }
+
+      set({
+        photos,
+        ...deriveState(photos),
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Failed to load photos from library', error);
+      set({ isLoading: false });
+    }
+  },
+
+  deletePhoto: (id) =>
+    set((state) => {
+      const target = state.photos.find((photo) => photo.id === id);
+      const photos = state.photos.filter((photo) => photo.id !== id);
+
+      return {
+        photos,
+        recycleBin: target ? [target, ...state.recycleBin] : state.recycleBin,
+        ...deriveState(photos),
+      };
+    }),
+
+  deletePhotos: (ids) =>
+    set((state) => {
+      const deletedPhotos = state.photos.filter((photo) => ids.includes(photo.id));
+      const photos = state.photos.filter((photo) => !ids.includes(photo.id));
+
+      return {
+        photos,
+        recycleBin: [...deletedPhotos, ...state.recycleBin],
+        ...deriveState(photos),
+      };
+    }),
+
+  restorePhoto: (id) =>
+    set((state) => {
+      const target = state.recycleBin.find((photo) => photo.id === id);
+      if (!target) return state;
+
+      const photos = [target, ...state.photos];
+      return {
+        photos,
+        recycleBin: state.recycleBin.filter((photo) => photo.id !== id),
+        ...deriveState(photos),
+      };
+    }),
 
   selectCluster: (cluster) => set({ selectedCluster: cluster }),
 }));

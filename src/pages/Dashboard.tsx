@@ -1,13 +1,13 @@
 import React from 'react';
 import { useStore } from '../store/useStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { ArrowRight, Image as ImageIcon, Video, Copy, FileText } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { ArrowRight, Image as ImageIcon, Video, Copy, FileText, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 export const Dashboard = () => {
-  const { storageStats, cleanupSuggestions } = useStore();
+  const { storageStats, cleanupSuggestions, photos, isLoading, loadPhotosFromLibrary } = useStore();
   const { t } = useTranslation();
 
   const pieData = [
@@ -24,10 +24,39 @@ export const Dashboard = () => {
           <h1 className="text-3xl font-bold tracking-tight mb-2">{t('nav.spaceAnalysis')}</h1>
           <p className="text-muted-foreground">{t('dashboard.storageOverview')}</p>
         </div>
-        <Link to="/cleanup" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-          {t('nav.smartCleanup')} <ArrowRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => void loadPhotosFromLibrary()}
+            className="px-4 py-2 rounded-lg font-medium border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            {isLoading ? t('common.loading') : t('dashboard.importPhotos')}
+          </button>
+          <Link to="/cleanup" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
+            {t('nav.smartCleanup')} <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
+
+      {!isLoading && photos.length === 0 && (
+        <Card>
+          <CardContent className="py-10 flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <Upload className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-lg font-semibold">{t('dashboard.noPhotosTitle')}</div>
+              <p className="text-sm text-muted-foreground mt-1">{t('dashboard.noPhotosDesc')}</p>
+            </div>
+            <button
+              onClick={() => void loadPhotosFromLibrary()}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              {t('dashboard.importPhotos')}
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>

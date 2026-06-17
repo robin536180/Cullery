@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Check, X, AlertCircle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, AlertCircle, Sparkles, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 export const Selection = () => {
-  const { photos } = useStore();
+  const { photos, isLoading, loadPhotosFromLibrary } = useStore();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { t } = useTranslation();
 
@@ -16,7 +16,30 @@ export const Selection = () => {
   const candidates = photos.slice(0, 5); 
   const selectedPhoto = candidates[selectedIndex];
 
-  if (!selectedPhoto) return <div className="p-6">{t('common.loading')}</div>;
+  if (isLoading) return <div className="p-6">{t('common.loading')}</div>;
+  if (!selectedPhoto) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Card>
+          <CardContent className="py-12 flex flex-col items-center text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <Upload className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-lg font-semibold">{t('dashboard.noPhotosTitle')}</div>
+              <p className="text-sm text-muted-foreground mt-1">{t('selection.emptyDesc')}</p>
+            </div>
+            <button
+              onClick={() => void loadPhotosFromLibrary()}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              {t('dashboard.importPhotos')}
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const analysis = selectedPhoto.aiAnalysis || {
     qualityScore: 0,
